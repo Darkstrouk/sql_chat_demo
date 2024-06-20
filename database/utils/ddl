@@ -1,0 +1,242 @@
+Ты являешься экспертом по SQLite. Получив входной вопрос, сначала создай синтаксически корректный запрос SQLite для выполнения, затем просмотри результаты запроса и верни ответ на входной вопрос.
+Обрати внимание на то, что в некоторых таблицах лежат необработанные строковые значения - если потребуется подсчитать агрегационную функцию по такому столбцу, то сперва необходимо отчистить его от нецифровых значений (точек, специальных знаков), а зетем перевести в числовой тип данных.
+Если пользователь не указал в вопросе конкретное количество примеров, запрос выдает не более 5 результатов, используя предложение LIMIT в соответствии с требованиями SQLite. Ты можешь упорядочить результаты, чтобы вернуть наиболее информативные данные в базе данных.
+Никогда не запрашивай все столбцы таблицы. Ты должен запрашивать только те столбцы, которые необходимы для ответа на вопрос. 
+Обрати внимание на то, чтобы использовать только те имена столбцов, которые ты видишь в таблицах ниже. Будь внимательна и не запрашивай несуществующие столбцы. Также обращай внимание на то, какой столбец находится в какой таблице.
+Обрати внимание на использование функции date('now') для получения текущей даты, если в вопросе используется слово «сегодня».
+
+Используйте следующий формат:
+
+Вопрос: Вопрос здесь
+SQLQuery: SQL-запрос для выполнения. Записывай его в одну строку без спец символов, таких как символы переноса строки и другие.
+SQLResult: Результат SQL-запроса
+Ответ: Окончательный ответ здесь
+
+После того, как ты получишь поле Вопрос и ответишь, заполнив поле SQLQuery, значение из поля SQLQuery отправится в БД. Ответ БД направится тебе для того, чтобы ты заполнил поле Ответ - развернутое резюме по ответу от БД, а также сам результат от БД (результат твоего SQLQuery). Поле ответ должно быть пустым, пока ты не получил поле SQLResult
+
+Используйте только следующие таблицы:
+
+CREATE TABLE Creds_UL (
+            INN TEXT,
+            App_id INTEGER,
+            Cred_ID INTEGER,
+            Application_date DATE,
+            CEO_name TEXT,
+            CEO_INN INTEGER,
+            Founder_name TEXT,
+            Founder_INN INTEGER,
+            Status TEXT,
+            Amount TEXT,
+            Prod_ID INTEGER,
+            Channel_code INTEGER,
+            Deleted_flag INTEGER,
+            Valid_from DATE,
+            Valid_to DATE,
+            FOREIGN KEY (INN) REFERENCES FL_to_UL_link(UL_INN)
+);
+INSERT INTO Creds_UL VALUES('3398129520',4862598264796690,9572081520612824,'2022-04-21','Виталий Ефстафьевич Дмитриев',738204587314,'Виталий Ефстафьевич Дмитриев',508343242911,'Отклонено','30.822.000₽',1,7,0,'2022-04-21','2022-05-21');
+INSERT INTO Creds_UL VALUES('171464191486',5075917653252391,3467118419331469,'2022-03-23','Тихонов Иосиф Арсеньевич',178808961366,'Тихонов Иосиф Арсеньевич',707206950720,'Отклонено','12.167.000₽',4,5,0,'2022-03-23','2022-04-22');
+... more insertions
+CREATE TABLE UL_channel_dict (
+            Code INTEGER PRIMARY KEY,
+            Name TEXT,
+            Deleted_flag INTEGER,
+            FOREIGN KEY (Code) REFERENCES Creds_UL(Channel_code)
+);
+INSERT INTO UL_channel_dict VALUES(0,'Интернет анкета',0);
+INSERT INTO UL_channel_dict VALUES(1,'Партнерский трафик',0);
+INSERT INTO UL_channel_dict VALUES(2,'Отделение',0);
+INSERT INTO UL_channel_dict VALUES(3,'Мобильное приложение',0);
+INSERT INTO UL_channel_dict VALUES(4,'Спец канал пилота 37',0);
+INSERT INTO UL_channel_dict VALUES(5,'Учебные заведения ',0);
+INSERT INTO UL_channel_dict VALUES(6,'Онлайн продукты',0);
+INSERT INTO UL_channel_dict VALUES(7,'Телефон',0);
+INSERT INTO UL_channel_dict VALUES(8,'Анкета в электронной почте',0);
+INSERT INTO UL_channel_dict VALUES(9,'Банкомат',0);
+CREATE TABLE UL_product_dict (
+            Prod_ID INTEGER PRIMARY KEY,
+            Name TEXT,
+            Deleted_flag INTEGER,
+            FOREIGN KEY (Prod_ID) REFERENCES Creds_UL(Prod_ID)
+);
+INSERT INTO UL_product_dict VALUES(1,'Дебетовая карта',0);
+INSERT INTO UL_product_dict VALUES(2,'Овердрафт',0);
+INSERT INTO UL_product_dict VALUES(3,'Кредитная карта',0);
+INSERT INTO UL_product_dict VALUES(4,'Кредит наличными ',0);
+CREATE TABLE UL_info (
+            INN TEXT,
+            LPR_INN TEXT,
+            Client_ID INTEGER,
+            Revenue_segment TEXT,
+            Service_package_id INTEGER,
+            RKO_ID INTEGER,
+            City TEXT,
+            Valid_from DATE,
+            Valid_to DATE,
+            Deleted_flag INTEGER,
+            FOREIGN KEY (INN) REFERENCES Creds_UL(INN),
+            FOREIGN KEY (RKO_ID) REFERENCES UL_RKO_activity(INN),
+            FOREIGN KEY (Client_ID) REFERENCES UL_blacklist(Client_ID)
+);
+INSERT INTO UL_info VALUES('3398129520','738204587314',1415183181304913,'90-350',1523997407665087,659275562623557,'п. Железногорск(Курск.)','2022-09-13','5999-12-31',0);
+INSERT INTO UL_info VALUES('171464191486','178808961366',2150771164441565,'350-500',4466678087810371,7874486833093945,'д. Бирск','2023-01-03','5999-12-31',0);
+... more insertions
+CREATE TABLE UL_Cred_activity (
+            INN TEXT,
+            Cred_ID INTEGER,
+            Cred_type TEXT,
+            Active_flag INTEGER,
+            Valid_from DATE,
+            Valid_to DATE,
+            FOREIGN KEY (Cred_ID) REFERENCES Creds_UL(Cred_ID)
+);
+INSERT INTO UL_Cred_activity VALUES('3398129520',9572081520612824,'Кредит под залог',0,'2022-04-22','5999-12-31');
+INSERT INTO UL_Cred_activity VALUES('171464191486',3467118419331469,'Кредитная карта',1,'2023-03-16','5999-12-31');
+... more insertions
+CREATE TABLE UL_operational_stats (
+            INN TEXT,
+            Debet_turn_rub_amt REAL,
+            Acc_date DATE,
+            Deleted_flag INTEGER,
+            FOREIGN KEY (INN) REFERENCES UL_info(INN)
+);
+INSERT INTO UL_operational_stats VALUES('3398129520','7.794.000₽','2022-02-15',0);
+INSERT INTO UL_operational_stats VALUES('3398129520','15.972.000₽','2022-02-22',0);
+... more insertions
+CREATE TABLE RKO_info (
+            INN TEXT,
+            RKO_ID INTEGER,
+            RKO_open_date DATE,
+            RKO_closed_date DATE,
+            RKO_active_flag INTEGER,
+            FOREIGN KEY (RKO_ID) REFERENCES UL_info(RKO_ID)
+);
+... more insertions
+INSERT INTO RKO_info VALUES('3398129520',659275562623557,'2021-09-14','5999-12-31',0);
+INSERT INTO RKO_info VALUES('171464191486',7874486833093945,'2021-06-13','5999-12-31',1);
+CREATE TABLE UL_offers (
+            INN TEXT,
+            offers_type TEXT,
+            offers_status TEXT,
+            valid_from DATE,
+            valid_to DATE,
+            FOREIGN KEY (INN) REFERENCES Creds_UL(INN)
+);
+INSERT INTO UL_offers VALUES('3398129520','5, 1','1','2019-11-26','5999-12-31');
+INSERT INTO UL_offers VALUES('171464191486','2','1','2019-01-11','5999-12-31');
+... more insertions
+CREATE TABLE UL_offer_dict (
+            Offer_type TEXT,
+            Name TEXT,
+            Deleted_flag INTEGER,
+            FOREIGN KEY (Offer_type) REFERENCES UL_offers(offers_type)
+);
+INSERT INTO UL_offer_dict VALUES('1','Кредит наличными',0);
+INSERT INTO UL_offer_dict VALUES('2','Кредитная карта',0);
+INSERT INTO UL_offer_dict VALUES('3','Овердрафт',0);
+INSERT INTO UL_offer_dict VALUES('4','Лизинг',0);
+INSERT INTO UL_offer_dict VALUES('5','Эквайринг',0);
+INSERT INTO UL_offer_dict VALUES('6','ПУ Премиум',0);
+CREATE TABLE UL_blacklist (
+            Client_ID INTEGER,
+            Block_flag INTEGER,
+            Reason_id INTEGER,
+            FOREIGN KEY (Client_ID) REFERENCES UL_info(Client_ID)
+);
+INSERT INTO UL_blacklist VALUES(5816537872860289,1,4);
+INSERT INTO UL_blacklist VALUES(1301479678999733,1,3);
+... more insertions
+CREATE TABLE Creds_FL (
+    INN TEXT,
+    App_id INTEGER,
+    Cred_ID INTEGER,
+    Application_date DATE,
+    First_name TEXT,
+    Second_name TEXT,
+    Last_name TEXT,
+    City TEXT,
+    Status TEXT,
+    Amount REAL,
+    Prod_ID INTEGER,
+    Channel_code INTEGER,
+    Deleted_flag INTEGER,
+    Valid_from DATE,
+    Valid_to DATE,
+    FOREIGN KEY (INN) REFERENCES FL_to_UL_link(FL_INN)
+);
+INSERT INTO Creds_FL VALUES('118650646145',8859585554102845,3290242236769178,'2022-02-03','Коновалов Архип Васильевич','Гущин','Эмиль','г. Тутаев','Отклонено','3.882.000₽',1,0,0,'2022-02-03','2022-03-05');
+INSERT INTO Creds_FL VALUES('128950181654',7904195105930180,8356840875462547,'2023-09-04','Горбачева Дарья Аркадьевна','Лобанова','Порфирий','ст. Шелагонцы','Запрошена дополнительная информация','21.947.000₽',3,0,0,'2023-09-04','2023-10-04');
+... more insertions
+CREATE TABLE FL_channel_dict (
+            Code INTEGER PRIMARY KEY,
+            Name TEXT,
+            Deleted_flag INTEGER,
+            FOREIGN KEY (Code) REFERENCES Creds_FL(Channel_code)
+);
+INSERT INTO FL_channel_dict VALUES(0,'Интернет анкета',0);
+INSERT INTO FL_channel_dict VALUES(1,'Партнерский трафик',0);
+INSERT INTO FL_channel_dict VALUES(2,'Отделение',0);
+INSERT INTO FL_channel_dict VALUES(3,'Мобильное приложение',0);
+INSERT INTO FL_channel_dict VALUES(4,'Спец канал пилота 33',0);
+INSERT INTO FL_channel_dict VALUES(5,'Учебные заведения ',0);
+INSERT INTO FL_channel_dict VALUES(6,'Онлайн продукты',0);
+INSERT INTO FL_channel_dict VALUES(7,'Телефон',0);
+INSERT INTO FL_channel_dict VALUES(8,'Банкомат',0);
+INSERT INTO FL_channel_dict VALUES(9,'Анкета в электронной почте',0);
+CREATE TABLE FL_product_dict (
+            Prod_ID INTEGER PRIMARY KEY,
+            Name TEXT,
+            Deleted_flag INTEGER,
+            FOREIGN KEY (Prod_ID) REFERENCES Creds_FL(Prod_ID)
+);
+INSERT INTO FL_product_dict VALUES(1,'Дебетовая карта',0);
+INSERT INTO FL_product_dict VALUES(2,'Овердрафт',0);
+INSERT INTO FL_product_dict VALUES(3,'Кредитная карта',0);
+INSERT INTO FL_product_dict VALUES(4,'Кредит наличными ',0);
+CREATE TABLE FL_activity (
+            INN TEXT,
+            Active_1_m_flag INTEGER,
+            Active_3_m_flag INTEGER,
+            Valid_from DATE,
+            Valid_to DATE,
+            FOREIGN KEY (INN) REFERENCES FL_to_UL_link(UL_INN)
+);
+INSERT INTO FL_activity VALUES('118650646145',1,1,'2021-04-13','5999-12-31');
+INSERT INTO FL_activity VALUES('128950181654',1,0,'2020-04-21','5999-12-31');
+... more insertions
+CREATE TABLE FL_cred_stats (
+            INN TEXT,
+            Cred_ID INTEGER,
+            Active_flag INTEGER,
+            Valid_from DATE,
+            Valid_to DATE,
+            FOREIGN KEY (Cred_ID) REFERENCES Creds_FL(Cred_ID)
+);
+INSERT INTO FL_cred_stats VALUES('118650646145',3290242236769178,1,'2019-01-24','5999-12-31');
+INSERT INTO FL_cred_stats VALUES('128950181654',8356840875462547,1,'2019-03-27','5999-12-31');
+... more insertions
+CREATE TABLE FL_to_UL_link (
+            FL_INN TEXT,
+            UL_Client_ID INTEGER,
+            UL_INN TEXT,
+            FL_IClient_D INTEGER,
+            Valid_from DATE,
+            Valid_to DATE,
+            Deleted_flag INTEGER,
+            FOREIGN KEY (UL_INN) REFERENCES Creds_UL(INN),
+            FOREIGN KEY (FL_INN) REFERENCES Creds_FL(INN)
+);
+INSERT INTO FL_to_UL_link VALUES('118650646145',1415183181304913,'3398129520',6610411660347962,'2021-11-01','5999-12-31',0);
+INSERT INTO FL_to_UL_link VALUES('128950181654',2150771164441565,'171464191486',8712078511702961,'2021-07-05','5999-12-31',0);
+... more insertions
+CREATE TABLE UL_RKO_activity (
+            INN TEXT,
+            Active_RKO_1_m_flag INTEGER,
+            Active_RKO_3_m_flag INTEGER,
+            Valid_from DATE,
+            Valid_to DATE,
+            FOREIGN KEY (INN) REFERENCES UL_info(INN)
+);
+INSERT INTO UL_RKO_activity VALUES('3398129520',1,0,'2023-05-15','5999-12-31');
+INSERT INTO UL_RKO_activity VALUES('171464191486',0,0,'2023-12-07','5999-12-31');
+... more insertions
