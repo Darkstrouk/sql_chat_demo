@@ -3,6 +3,8 @@
 Если пользователь не указал в вопросе конкретное количество примеров, запрос выдает не более 5 результатов, используя предложение LIMIT в соответствии с требованиями SQLite. Ты можешь упорядочить результаты, чтобы вернуть наиболее информативные данные в базе данных.
 Никогда не запрашивай все столбцы таблицы. Ты должен запрашивать только те столбцы, которые необходимы для ответа на вопрос. 
 Обрати внимание на то, чтобы использовать только те имена столбцов, которые ты видишь в таблицах ниже. Будь внимательна и не запрашивай несуществующие столбцы. Также обращай внимание на то, какой столбец находится в какой таблице.
+Обрати внимание на все колонки каждой отдельной таблицы перед формированием SQL запроса. Например, Deleted_flag, который означает, что запись в таблице устарела. Его нужно ставить в условие и фильтровать как Deleted_flag = 0. 
+Для сложных вопросов используй CTE как промежуточные данные для последующей обработки. Иногда необходимо использовать оконные функции. 
 Обрати внимание на использование функции date('now') для получения текущей даты, если в вопросе используется слово «сегодня».
 
 Используйте следующий формат:
@@ -240,3 +242,25 @@ CREATE TABLE UL_RKO_activity (
 INSERT INTO UL_RKO_activity VALUES('3398129520',1,0,'2023-05-15','5999-12-31');
 INSERT INTO UL_RKO_activity VALUES('171464191486',0,0,'2023-12-07','5999-12-31');
 ... more insertions
+
+Вот несколько примеров пар "вопрос пользователя" - "SQL Lite запрос" для данных таблиц.
+"вопрос пользователя": Какой продукт самый востребованный у ФЛ?
+"SQL Lite запрос": with tab1 as (SELECT t2.Name, COUNT(DISTINCT t1.INN) AS cnt FROM Creds_FL t1 INNER JOIN FL_product_dict t2 on t1.Prod_id = t2.Prod_id and t2.Deleted_flag = 0 WHERE t1.Deleted_flag = 0) SELECT Name FROM tab1 ORDER BY cnt DESC LIMIT 1
+
+"вопрос пользователя": Дай мне разбивку количества ЮЛ у которых активное РКО за последние 3 месяца в каждом сегменте
+"SQL Lite запрос": with tab1 as (SELECT *, ROW_NUMBER() OVER(PARTITION BY INN ORDER BY Valid_from desc) AS rn FROM UL_RKO_activity) SELECT COUNT(t1.INN) as 'Количество ЮЛ', t1.Revenue_segment FROM UL_info t1 INNER JOIN tab1 t2 on t1.INN = t2.INN WHERE 1=1 AND t2.rn = 1 AND t2.Active_rko_3_m_flag = 1 AND t1.Deleted_flag = 0 GROUP BY t1.Revenue_segment ORDER BY length(t1.Revenue_segment)
+
+"вопрос пользователя": Из какого города больше всего активных ЮЛ за все время?
+"SQL Lite запрос": with tab1 as (SELECT SUM(Active_RKO_1_m_flag) as sum_monthly_activity, INN FROM UL_RKO_Activity GROUP BY INN) SELECT t1.City, t2.sum_monthly_activity FROM UL_info t1 INNER JOIN tab1 t2 on t1.INN = t2.INN WHERE 1=1 AND t2.sum_monthly_activity = (SELECT MAX(sum_monthly_activity) FROM tab1) AND t1.Deleted_flag = 0
+
+"вопрос пользователя": Покажи топ 10 самых бережливых ЮЛ по сумме операционных расходов за январь позапрошлого года
+"SQL Lite запрос": SELECT INN, SUM(CAST(SUBSTR(REPLACE(Debet_turn_rub_amt, '.', ''), 1, LENGTH(Debet_turn_rub_amt) - 1) AS INT)) FROM UL_operational_stats WHERE Acc_date >= '2022-01-01' AND Acc_date < '2022-02-01' AND Deleted_flag = 0 GROUP BY INN ORDER BY SUM(CAST(SUBSTR(REPLACE(Debet_turn_rub_amt, '.', ''), 1, LENGTH(Debet_turn_rub_amt) - 1) AS INT)) LIMIT 10
+
+"вопрос пользователя": Выведи топ 10 ЮЛ по сумме операционным расходам
+"SQL Lite запрос": SELECT INN, SUM(CAST(SUBSTR(REPLACE(Debet_turn_rub_amt, '.', ''), 1, LENGTH(Debet_turn_rub_amt) - 1) AS INT)) FROM UL_operational_stats WHERE Deleted_flag = 0 GROUP BY INN ORDER BY SUM(CAST(SUBSTR(REPLACE(Debet_turn_rub_amt, '.', ''), 1, LENGTH(Debet_turn_rub_amt) - 1) AS INT)) DESC LIMIT 10
+
+"вопрос пользователя": Какие типы офферов есть у ЮЛ клиентов, которые получили отказ по кредитной заявке в период с сентября по октябрь позапрошлого года?
+"SQL Lite запрос": with tab1 as (SELECT t1.INN FROM Creds_UL t1 LEFT JOIN UL_Channel_dict t2 on t1.Channel_code = t2.code WHERE 1=1 AND t1.Status = 'Отклонено' AND t1.Deleted_flag = 0 AND t1.Valid_from BETWEEN '2022-09-01' AND '2022-10-31'), tab2 as (SELECT O.INN, D.Name FROM UL_offers AS O JOIN UL_offer_dict AS D ON O.offers_type LIKE '%' || D.offer_type || '%' AND D.Deleted_flag = 0) SELECT DISTINCT t1.Name FROM tab2 t1 INNER JOIN tab1 t2 on t1.INN = t2.INN
+
+"вопрос пользователя": Сколько компаний обратилось за кредитом с сентября по октябрь позапрошлого года в разрезе каналов кредитного траффика?
+"SQL Lite запрос": SELECT COUNT(DISTINCT t1.INN), t2.name as channel_name FROM Creds_UL t1 LEFT JOIN UL_Channel_dict t2 on t1.Channel_code = t2.code AND t2.Deleted_flag = 0 WHERE 1=1 AND t1.Status = 'Отклонено' AND t1.Deleted_flag = 0 AND t1.Valid_from BETWEEN '2022-09-01' AND '2022-10-31'
