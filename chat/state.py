@@ -16,6 +16,7 @@ class QA(rx.Base):
     """A question and answer pair."""
     question: str
     answer: str
+    sql_query: str = ""
 
 DEFAULT_CHATS = {"Intros": []}
 
@@ -142,6 +143,7 @@ class State(rx.State):
             sql_query = self.extract_sql_query(self.gpt_response)
             logger.debug("Extracted SQL query: %s", sql_query)
             if sql_query:
+                self.chats[self.current_chat][-1].sql_query = sql_query # Store the SQL query in the QA instance
                 sql_result = self.execute_sql_query(sql_query)
                 logger.debug("sql_result: %s", self.sql_result)
                 self.sql_result = str(sql_result)
