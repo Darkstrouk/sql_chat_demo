@@ -57,57 +57,6 @@ def message(qa: QA) -> rx.Component:
     components = [component for component in [question_box, answer_box, sql_query_box] if component is not None]
     return rx.vstack(*components, width="100%")
 
-# def message(qa: QA) -> rx.Component:
-#     """A single question/answer message.
-
-#     Args:
-#         qa: The question/answer pair.
-
-#     Returns:
-#         A component displaying the question/answer pair along with the SQL query.
-#     """
-#     question_box = rx.box(
-#         rx.markdown(
-#             qa.question,
-#             background_color=rx.color("mauve", 4),
-#             color=rx.color("mauve", 12),
-#             **message_style,
-#         ),
-#         text_align="right",
-#         margin_top="1em",
-#     )
-    
-#     answer_box = rx.box(
-#         rx.markdown(
-#             qa.answer,
-#             background_color=rx.color("accent", 4),
-#             color=rx.color("accent", 12),
-#             **message_style,
-#         ),
-#         text_align="left",
-#         padding_top="1em",
-#     )
-
-#     # Conditionally add the SQL query box if it exists
-#     sql_query_box = rx.cond(
-#         qa.sql_query != "",  # Condition to check if sql_query is not empty
-#         rx.box(
-#             rx.code(
-#                 qa.sql_query,
-#                 language='sql',
-#                 background_color=rx.color("gray", 2),
-#                 margin_y="1em",
-#                 padding="1em"
-#             ),
-#             width="100%",
-#         ),
-#         None  # Use None as the fallback
-#     )
-
-#     # Return a vertical stack of all components, filtering out None
-#     components = [component for component in [question_box, answer_box, sql_query_box] if component is not None]
-#     return rx.vstack(*components, width="100%")
-
 
 def chat() -> rx.Component:
     """List all the messages in a single conversation."""
