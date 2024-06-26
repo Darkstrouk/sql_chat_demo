@@ -16,6 +16,7 @@ services:
     volumes:
        - db-data:/app/data
        - upload-data:/app/uploaded_files
+       - utils-data:/app/database/utils # Монтируем utils-data в нужную директорию
     restart: always
 
   webserver:
@@ -40,3 +41,4 @@ volumes:
   upload-data:
   # TLS keys and certificates
   caddy-data:
+  utils-data:
