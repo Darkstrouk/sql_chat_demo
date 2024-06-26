@@ -5,8 +5,8 @@ import os
 import pathlib
 
 
-SQLITE_DB_PATH = 'root/sql_chat_demo/database/utils/demo.db'
-PROMPT_PATH = 'root/sql_chat_demo/database/utils/ddl.txt'
+SQLITE_DB_PATH = '/root/sql_chat_demo/database/utils/demo.db'
+PROMPT_PATH = '/root/sql_chat_demo/database/utils/ddl.txt'
 
 with open(PROMPT_PATH, 'r', encoding='utf-8') as file:
     PROMPT = file.read()
