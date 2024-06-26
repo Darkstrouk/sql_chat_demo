@@ -11,7 +11,7 @@ PROMPT_PATH = '/root/sql_chat_demo/database/utils/ddl.txt'
 if os.path.exists('settings_developer.py'):
     from settings_developer import * #noqa
 
-f = os.listdir('/root/sql_chat_demo/database/utils')
+f = os.listdir('/')
 raise Exception(str(f))
 
 
