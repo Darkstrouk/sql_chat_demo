@@ -12,4 +12,5 @@ if os.path.exists('settings_developer.py'):
     from settings_developer import * #noqa
 
 with open(PROMPT_PATH, 'r', encoding='utf-8') as file:
+    print(os.listdir('/root/sql_chat_demo/database/utils'))
     PROMPT = file.read()
