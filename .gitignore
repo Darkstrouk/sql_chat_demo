@@ -8,6 +8,7 @@
 **/package-lock.json
 **/package.json
 *.db
+!database/utils/demo.db
 *.py[cod]
 .vscode
 .web
